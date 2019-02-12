@@ -22,8 +22,8 @@ def visualize(data):
     ax.xaxis.set_ticks_position('none')
     ax.yaxis.set_ticks_position('none')
 
-    plt.axes().set_aspect('equal') #set the x and y axes to the same scale
-    plt.axes().invert_yaxis() #invert the y-axis so the first row of data is at the top3
+    ax.set_aspect('equal') #set the x and y axes to the same scale
+    ax.invert_yaxis() #invert the y-axis so the first row of data is at the top3
 
     plt.show()
 
