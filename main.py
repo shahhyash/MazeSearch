@@ -59,26 +59,8 @@ def dfs_search(maze):
         if row is dim-1 and col is dim-1:
             path.append(coords)
             break
-        elif cell == CELL_BLOCKED:
+        elif cell == CELL_BLOCKED or cell == CELL_PATH:
             continue
-        elif cell == CELL_PATH:
-            if(len(toVisit) < 1):
-                break
-
-            # If we've already visited this node, and this node is adjacent to the next block to visit,
-            # then, we've encountered a dead-end path and we can go ahead and clear those nodes from the path array
-
-            next_coords = toVisit[len(toVisit)-1]
-            if is_adjacent(coords, next_coords):
-                while len(path) > 0:
-                    prev_coords = path.pop()
-                    prev_row = prev_coords[0]
-                    prev_col = prev_coords[1]
-                    if prev_row == row and prev_col == col:
-                        path.append(prev_coords)
-                        break
-                    else:
-                        clear_visited.append(prev_coords)
         else:
             # Here the cell is open so let's keep exploring further
             # we should add cells to this list so that we're exploring down/right, THEN left/up
@@ -150,12 +132,15 @@ def dfs_search(maze):
 
     return result
     
-maze = generate_maze(10, 0.2)
+maze = generate_maze(100, 0.2)
 
 viz.visualize(maze)
 
 result = dfs_search(maze)
 if result['status']:
+    print("num moves: %d" % result['num_moves'])
+    print("path length: ", len(result['path']))
+    print("path: ", result['path'])
     viz.visualize(maze)
 else:
     print("Maze is not solvable.")
