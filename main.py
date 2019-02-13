@@ -1,4 +1,5 @@
 import numpy as np
+import queue
 import visualizer as viz
 
 # Constants used for improved code readability
@@ -131,16 +132,103 @@ def dfs_search(maze):
     }
 
     return result
+
+# perform bfs search on a Maze to find a solution
+def bfs_search(maze):
+    dim = maze.shape[0]
     
-maze = generate_maze(100, 0.2)
+    # Declare fringe as queue for dfs search - start by looking down, and to the right
+    toVisit = queue.Queue()
+    toVisit.put([1,0])
+    toVisit.put([0,1])
+    
+    # Array to keep track of path from start to end
+    # path = [[0,0]]
+
+    # Moves counter
+    num_moves = 0
+
+    # Iterate through fringe until it's empty
+    while not toVisit.empty():
+        coords = toVisit.get()
+        row = coords[0]
+        col = coords[1]
+        cell = maze[row][col]
+
+        num_moves = num_moves + 1
+
+        if row == dim-1 and col == dim-1:
+            break
+        elif cell == CELL_BLOCKED or cell == CELL_PATH:
+            continue
+        else:
+            # We've reached an open node that is not a goal node
+            # Let's further explore this route and add it's children to the queue
+
+            # Push one cell down to queue
+            if row < dim-1:
+                n_row = row+1
+                n_col = col
+                n_cell = maze[n_row][n_col]
+                if n_cell != CELL_BLOCKED:
+                    toVisit.put([n_row, n_col])
+
+            # Push one cell right to queue
+            if col < dim-1:
+                n_row = row
+                n_col = col+1
+                n_cell = maze[n_row][n_col]
+                if n_cell != CELL_BLOCKED:
+                    toVisit.put([n_row, n_col])
+            
+            # Push one cell up to queue
+            if row > 0:
+                n_row = row-1
+                n_col = col
+                n_cell = maze[n_row][n_col]
+                if n_cell != CELL_BLOCKED:
+                    toVisit.put([n_row, n_col])
+
+            # Push one cell left to queue
+            if col > 0:
+                n_row = row
+                n_col = col-1
+                n_cell = maze[n_row][n_col]
+                if n_cell != CELL_BLOCKED:
+                    toVisit.put([n_row, n_col])
+
+            # Mark cell as visited
+            maze[row][col] = CELL_PATH
+            
+
+    # Check if last element in path is the goal node - if so we mark it as successful
+    search_success = False
+    # if len(path) > 0:
+    #     last = path[len(path)-1]
+    #     if last[0] == dim-1 and last[1] == dim-1:
+    #         search_success = True
+
+    result = {
+        'status': search_success,
+        'num_moves': num_moves,
+        'path': ''
+    }
+
+    return result
+    
+maze = generate_maze(10, 0.2)
 
 viz.visualize(maze)
 
-result = dfs_search(maze)
+result = bfs_search(maze)
 if result['status']:
     print("num moves: %d" % result['num_moves'])
     print("path length: ", len(result['path']))
     print("path: ", result['path'])
     viz.visualize(maze)
 else:
+    print("num moves: %d" % result['num_moves'])
+    print("path: ", result['path'])
     print("Maze is not solvable.")
+    viz.visualize(maze)
+
