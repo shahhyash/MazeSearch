@@ -133,26 +133,37 @@ def dfs_search(maze):
 
     return result
 
+# TreeNode for each cell in path; reverse order to find trace of path
+class PathNode:
+    def __init__(self, row, col, parent):
+        self.row = row
+        self.col = col
+        self.parent = parent
+
 # perform bfs search on a Maze to find a solution
 def bfs_search(maze):
     dim = maze.shape[0]
     
+    # Head of tree to keep track of all paths in BFS Search
+    start = PathNode(0,0,None)
+
     # Declare fringe as queue for dfs search - start by looking down, and to the right
     toVisit = queue.Queue()
-    toVisit.put([1,0])
-    toVisit.put([0,1])
+    toVisit.put(PathNode(1,0,start))
+    toVisit.put(PathNode(0,1,start))
     
-    # Array to keep track of path from start to end
-    # path = [[0,0]]
-
     # Moves counter
     num_moves = 0
 
+    # Store reference to last visited path node
+    ptr = None
+
     # Iterate through fringe until it's empty
     while not toVisit.empty():
-        coords = toVisit.get()
-        row = coords[0]
-        col = coords[1]
+        ptr = toVisit.get()
+        row = ptr.row
+        col = ptr.col
+
         cell = maze[row][col]
 
         num_moves = num_moves + 1
@@ -171,7 +182,7 @@ def bfs_search(maze):
                 n_col = col
                 n_cell = maze[n_row][n_col]
                 if n_cell != CELL_BLOCKED:
-                    toVisit.put([n_row, n_col])
+                    toVisit.put(PathNode(n_row,n_col,ptr))
 
             # Push one cell right to queue
             if col < dim-1:
@@ -179,7 +190,7 @@ def bfs_search(maze):
                 n_col = col+1
                 n_cell = maze[n_row][n_col]
                 if n_cell != CELL_BLOCKED:
-                    toVisit.put([n_row, n_col])
+                    toVisit.put(PathNode(n_row,n_col,ptr))
             
             # Push one cell up to queue
             if row > 0:
@@ -187,7 +198,7 @@ def bfs_search(maze):
                 n_col = col
                 n_cell = maze[n_row][n_col]
                 if n_cell != CELL_BLOCKED:
-                    toVisit.put([n_row, n_col])
+                    toVisit.put(PathNode(n_row,n_col,ptr))
 
             # Push one cell left to queue
             if col > 0:
@@ -195,28 +206,37 @@ def bfs_search(maze):
                 n_col = col-1
                 n_cell = maze[n_row][n_col]
                 if n_cell != CELL_BLOCKED:
-                    toVisit.put([n_row, n_col])
+                    toVisit.put(PathNode(n_row,n_col,ptr))
 
             # Mark cell as visited
             maze[row][col] = CELL_PATH
-            
 
-    # Check if last element in path is the goal node - if so we mark it as successful
+    # Replace visited cells and mark them open
+    maze[maze==CELL_PATH] = CELL_OPEN
+
+    # Iterate through tree and find path 
+    path = []
     search_success = False
-    # if len(path) > 0:
-    #     last = path[len(path)-1]
-    #     if last[0] == dim-1 and last[1] == dim-1:
-    #         search_success = True
+    if ptr is not None:
+        # If last node's location is at the bottom right, we've reached the goal node
+        if ptr.row == dim-1 and ptr.col == dim-1:
+            search_success = True
+            while ptr is not None:
+                # Redraw path in maze grid
+                maze[ptr.row][ptr.col] = CELL_PATH
+                path.insert(0, [ptr.row, ptr.col])
+                ptr = ptr.parent
 
     result = {
         'status': search_success,
         'num_moves': num_moves,
-        'path': ''
+        'path': path
     }
 
     return result
     
-maze = generate_maze(10, 0.2)
+
+maze = generate_maze(100, 0.2)
 
 viz.visualize(maze)
 
@@ -228,7 +248,5 @@ if result['status']:
     viz.visualize(maze)
 else:
     print("num moves: %d" % result['num_moves'])
-    print("path: ", result['path'])
     print("Maze is not solvable.")
-    viz.visualize(maze)
 
