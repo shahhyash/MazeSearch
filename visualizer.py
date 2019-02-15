@@ -5,7 +5,7 @@ def visualize(data):
     plt.style.use('ggplot')
     plt.rcParams["axes.axisbelow"] = False
 
-    fig = plt.figure()
+    fig = plt.figure(figsize = (10,10))
     ax = fig.add_subplot(111)
 
     ax.pcolormesh(data, cmap='RdGy_r', zorder=1) # RdGy allows us to define gray blocks and red path blocks
