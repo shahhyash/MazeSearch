@@ -21,6 +21,9 @@ class mazeSolver(object):
         self.cells = []        #list of all cells
         self.dim = 0
         self.finish = False
+        self.length = 0
+        self.max_frig_size = 0
+        self.max_nodes = 0
         
     def generate_maze(self, dim, p):
         CELL_BLOCKED=0
@@ -70,12 +73,18 @@ class mazeSolver(object):
         return cells
           
     def display_path(self):
-        cell = self.end        
+        cell = self.end 
+        self.length = 0
         while cell.parent is not self.start:
             cell = cell.parent
+            self.length += 1
             self.a[cell.x][cell.y] = 2            
             print ('path: cell:',cell.x, ',', cell.y)            
         visualize(self.a)
+        self.length += 2
+        print('Length of shortest path: ',self.length)
+        print('Maximal fringe size: ',self.max_frig_size)
+        print('No. of nodes expanded: ',self.max_nodes)
                    
     def solve(self):  
         dim = int(input('Enter the dimension of the maze: '))
@@ -83,6 +92,7 @@ class mazeSolver(object):
         self.init_maze(dim, p)
         heu = input('Enter type of heuristic (\'m\' for manhattan/ \'e\' for euclidean): ')
         self.fringe.put((self.start.f, 0, self.start))  #adding start cell to the fringe
+        self.max_frig_size = self.fringe.qsize()
         self.cost[self.start] = 0
         i = 1
         while not self.fringe.empty():
@@ -90,6 +100,7 @@ class mazeSolver(object):
             self.visited.add(cell)       #add cells to visited set as and when they're visited
             if cell is self.end:         #if popped cell is target cell, then path has been found
                 self.finish = True
+                self.max_nodes = i
                 return self.display_path()
                 #return self.finish
             adj_cells = self.get_adjacent_cells(cell)
@@ -102,6 +113,7 @@ class mazeSolver(object):
                         adj_cell.parent = cell         
                         f = c + self.get_h(adj_cell, heu) #get f value
                         self.fringe.put((f,i,adj_cell))   #push in fringe with f as priority
+                        self.max_frig_size = self.fringe.qsize()
                         i += 1
              
         if(self.finish == False):
