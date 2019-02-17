@@ -3,6 +3,7 @@ from queue import PriorityQueue
 import matplotlib.pylab as plt
 import math
 import random
+import SearchUtils
 
 class mazeCell(object):
     def __init__(self, x, y, open):        
@@ -121,62 +122,119 @@ def generate_maze():
     return maze
  
 #selecting the fittest(maze with the max hardness score) in the chosen generation 
-def selection(population, mode):        
+def selection_astar(population, mode):
+    global num_mazes
+    global num_solvable_mazes        
     fittest = (np.zeros(398, dtype = 'int'))
     hardness = -100
     for i in population:
-        p = mazeAstarSolver(i)
+        p = mazeAstarSolver(i).solve()
+        if p[0]:
+            num_solvable_mazes = num_solvable_mazes + 1
+
+        num_mazes = num_mazes + 1
+
         if mode == 'f':                 #f - max fringe size as hardness score
-            h_score = p.solve()[1]
+            h_score = p[1]
         else:							#n - max no. of nodes expanded as hardness score
-            h_score = p.solve()[2]
+            h_score = p[2]
         if h_score > hardness:
             hardness = h_score
             fittest = i
     
     return fittest, hardness            #return the fittest maze with corresponding hardness score
+
+#selecting the fittest(maze with the max hardness score) in the chosen generation 
+def selection_dfs(population, mode):
+    global num_mazes
+    global num_solvable_mazes
+    fittest = (np.zeros(398, dtype = 'int'))
+    hardness = -100
+
+    for i in population:
+        p = SearchUtils.dfs_search(i)
+
+        if p['status']:
+            num_solvable_mazes = num_solvable_mazes + 1
+        num_mazes = num_mazes + 1
+
+        if mode == 'f':                  #f - max fringe size as hardness score
+            h_score = p['max_fringe_size']
+        else:                           #n - max shortest path as hardness score
+            h_score = len(p['path'])
+        
+        if h_score > hardness:
+            hardness = h_score
+            fittest = i
     
+    return fittest, hardness
+
 #function that generates the first generation
-def initial_population():               
+def initial_population(astar=True):               
     population = []						
     while len(population) < 50:
-        chromosome = generate_maze()
-        p = mazeAstarSolver(chromosome)
-        if(p.solve()[0]):               #check whether the generated maze is solvable. if yes then it's considered
-            population.append(chromosome)
+        if astar:
+            chromosome = generate_maze()
+            p = mazeAstarSolver(chromosome)
+            if(p.solve()[0]):               #check whether the generated maze is solvable. if yes then it's considered
+                population.append(chromosome)
+        else:
+            chromosome = SearchUtils.generate_maze(20,0.2)
+            p = SearchUtils.dfs_search(chromosome)
+            if p['status']:
+                population.append(chromosome)
+
     return population					#returns 50 solvable mazes as the first generation
 
 #function that starts the evolution process
-def evolve(pop, c):
+def evolve(pop, c, mode, astar=True):
+    if astar:
+        selection = selection_astar
+        mutate = mutate_astar
+    else:
+        selection = selection_dfs
+        mutate = mutate_dfs
+
     while c < 30:						#30 generations are considered
         next_generation = []
-        parent1, hs = selection(pop, 'n')    #hardest maze from current generation is chosen as the first parent
+        parent1, hs = selection(pop, mode)    #hardest maze from current generation is chosen as the first parent
         generation.append(parent1)
         hardness_score.append(hs)
         remove_from_npa(pop, parent1)        
-        parent2 = selection(pop, 'n')[0]	 #second hardest maze is chosen as the second parent
+        parent2 = selection(pop, mode)[0]	 #second hardest maze is chosen as the second parent
         for i in range(50):
 			#the parents are crossed over to get the offspring and it's mutated
 			#50 such offsprings are produced and they form the next generation
-            next_generation.append(mutate(crossover(parent1, parent2)))        
+            next_generation.append(mutate(crossover(parent1, parent2, astar)))        
         c += 1
-        return evolve(next_generation, c)
+        return evolve(next_generation, c, mode, astar)
 
-def crossover(parent1, parent2):   #producing offsprings from parents
+def crossover(parent1, parent2, astar=True):   #producing offsprings from parents
     length = len(parent1)
     point = random.randint(0, length - 1)     #a random point is chosen
 	# offspring is formed by adding elemnts(chromosomes) of the first parent till the crossover point
 	# and the rest is formed by adding elements(chromosomes) of the second parent
-    child = np.append(parent1[:point], parent2[point:])    
+    if astar:
+        child = np.append(parent1[:point], parent2[point:])
+    else:
+        child = np.concatenate((parent1[:point], parent2[point:]))
     return child
 
-def mutate(child):                 #mutation of offspring chromosomes
+def mutate_astar(child):                 #mutation of offspring chromosomes
     for i in range(len(child)):
         rand_prob = round(random.uniform(0,1),3)   #a probability is chosen as random
         if rand_prob < 0.015:       #is mutation probability is less than 0.015
             child[i] = child[i] ^ 1 #then that chromosome is mutated. Here mutation means flipping 1 to 0 or 0 to 1
     return child
-    
+
+def mutate_dfs(child):
+    for row in range(len(child)):
+        for col in range(len(child)):
+            rand_prob = round(random.uniform(0,1),3)   #a probability is chosen as random
+            if rand_prob < 0.015:       #is mutation probability is less than 0.015
+                child[row][col] = child[row][col] ^ 1
+
+    return child
         
 def display_evolution():           #display all generations along with the max hardness score of each generation
     for i in range(len(generation)):
@@ -190,18 +248,61 @@ def fittest_of_all():              #displays in which generation the hardest maz
         if hardness_score[i] > hf:
             hf = hardness_score[i]
             pos = i
-    print('The hardest maze is found in Generation ',pos, ' with hardness score of ', hf)
+    print('The hardest maze is found in Generation ',pos+1, ' with hardness score of ', hf)
 
 
+print("\n------------------------------------------------------\nGenerating Hard Mazes: DFS Search")
+print("Metric: Maximal Fringe Size\n------------------------------------------------------")
 generation = []
 hardness_score = []
 
-c = 0
-evolve(initial_population(), c)
+num_mazes = 0
+num_solvable_mazes = 0
 
-
+evolve(initial_population(astar=False), 0, 'f', astar=False)          # when astar is false, it uses dfs search
 display_evolution()
 fittest_of_all()
 
+print("%d of the %d mazes explored were successfully solved." % (num_solvable_mazes, num_mazes)) 
 
+print("\n------------------------------------------------------\nGenerating Hard Mazes: DFS Search")
+print("Metric: Maximal Shortest Path\n------------------------------------------------------")
+generation = []
+hardness_score = []
 
+num_mazes = 0
+num_solvable_mazes = 0
+
+evolve(initial_population(astar=False), 0, 'n', astar=False)          # when astar is false, it uses dfs search
+display_evolution()
+fittest_of_all()
+
+print("%d of the %d mazes explored were successfully solved." % (num_solvable_mazes, num_mazes)) 
+
+print("\n------------------------------------------------------\nGenerating Hard Mazes: A* Manhattan")
+print("Metric: Maximal Nodes Expanded\n------------------------------------------------------")
+generation = []
+hardness_score = []
+
+num_mazes = 0
+num_solvable_mazes = 0
+
+evolve(initial_population(), 0, 'n')
+display_evolution()
+fittest_of_all()
+
+print("%d of the %d mazes explored were successfully solved." % (num_solvable_mazes, num_mazes))
+
+print("\n------------------------------------------------------\nGenerating Hard Mazes: DFS Search")
+print("Metric: Maximal Fringe Size\n------------------------------------------------------")
+generation = []
+hardness_score = []
+
+num_mazes = 0
+num_solvable_mazes = 0
+
+evolve(initial_population(), 0, 'f')          # when astar is false, it uses dfs search
+display_evolution()
+fittest_of_all()
+
+print("%d of the %d mazes explored were successfully solved." % (num_solvable_mazes, num_mazes)) 
