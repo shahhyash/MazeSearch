@@ -1,7 +1,14 @@
 import matplotlib.pylab as plt
 import numpy as np
 
-def visualize(data):
+def visualize(data, path=None):
+    if path is not None:
+        data = np.copy(data)
+        for cell in path:
+            row = cell[0]
+            col = cell[1]
+            data[row][col] = 2  # Mark as visited path
+
     plt.style.use('ggplot')
     plt.rcParams["axes.axisbelow"] = False
 

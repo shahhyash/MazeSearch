@@ -54,8 +54,6 @@ def dfs_search(maze):
     # Moves counter
     num_moves = 0
 
-    clear_visited = []
-
     # Iterate through the fringe until it is empty
     while len(toVisit) > 0:
         coords = toVisit.pop()
@@ -116,7 +114,6 @@ def dfs_search(maze):
             if len(path) > 0:
                 prev_coords = path.pop()
                 while not is_adjacent(prev_coords, coords) and len(path) > 0:
-                    clear_visited.append(prev_coords)
                     prev_coords = path.pop()
                 path.append(prev_coords)
             
@@ -227,8 +224,7 @@ def bfs_search(maze):
             # Mark cell as visited
             maze[row][col] = CELL_PATH
 
-    # Replace visited cells and mark them open
-    maze[maze==CELL_PATH] = CELL_OPEN
+    reset_maze(maze)
 
     # Iterate through tree and find path 
     path = []
@@ -239,7 +235,6 @@ def bfs_search(maze):
             search_success = True
             while ptr is not None:
                 # Redraw path in maze grid
-                maze[ptr.row][ptr.col] = CELL_PATH
                 path.insert(0, [ptr.row, ptr.col])
                 ptr = ptr.parent
 

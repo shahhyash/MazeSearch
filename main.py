@@ -18,7 +18,7 @@ if result['status']:
     print("maximum fringe size: %d" % result['max_fringe_size'])
     print("path length: ", len(result['path']))
     print("path: ", result['path'])
-    viz.visualize(maze)
+    viz.visualize(maze, result['path'])
 else:
     print("num moves: %d" % result['num_moves'])
     print("Maze is not solvable.")
@@ -31,7 +31,7 @@ if result['status']:
     print("maximum fringe size: %d" % result['max_fringe_size'])
     print("path length: ", len(result['path']))
     print("path: ", result['path'])
-    viz.visualize(maze)
+    viz.visualize(maze, result['path'])
 else:
     print("num moves: %d" % result['num_moves'])
     print("Maze is not solvable.")
