@@ -3,7 +3,9 @@ import numpy as np
 from queue import PriorityQueue
 import matplotlib.pylab as plt
 import math
-
+import SearchUtils
+import visualizer as viz
+import random 
 def visualize(data):
     plt.style.use('ggplot')
     plt.rcParams["axes.axisbelow"] = False
@@ -31,10 +33,6 @@ def visualize(data):
 
     plt.show()
 
-
-# In[3]:
-
-
 class mazeCell(object):
     def __init__(self, x, y, open):        
         self.open = open      #True if accessible, False if blocked
@@ -44,11 +42,6 @@ class mazeCell(object):
         self.h = 0
         self.f = 0
      
-
-
-# In[29]:
-
-
 class mazeSolver(object):
     def __init__(self, maze, heu):
         self.fringe = PriorityQueue()    
@@ -237,6 +230,28 @@ def astar_heuristic(x, y, qmaze):
     else:
         return(temp.mod_astar(x,y))
     
+
+# Function used to remove a fraction of the obstacles for a given maze
+def remove_blocks(maze, q):
+    viz.visualize(maze)
+
+    dim = maze.shape[0]
+    num_blocks = (maze==SearchUtils.CELL_BLOCKED).sum()                # Fetch number of blocks in maze
+    to_remove = round(num_blocks * q)                                         # Compute number of blocks to remove
+
+    while to_remove >= 1:
+        for row in range(dim):
+            for col in range(dim):
+                if maze[row][col] == SearchUtils.CELL_BLOCKED and to_remove >= 1:    # if num of blocks is less than 1, then remove blocks
+                    rand_prob = random.uniform(0,1)
+                    if rand_prob < q:
+                        maze[row][col] = SearchUtils.CELL_OPEN
+                        to_remove = to_remove-1
+
+    viz.visualize(maze)
+    return maze
+
+remove_blocks(SearchUtils.generate_maze(10,0.2), 0.1)
 
 
 hjk = np.array([[1, 1, 1, 1, 1, 1, 1, 1],

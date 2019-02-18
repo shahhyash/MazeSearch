@@ -7,10 +7,11 @@ CELL_OPEN=1
 CELL_PATH=2
 
 # Generate a Maze given a dimension (dim) and probability of cell being blocked (p)
-def generate_maze(dim, p):
+def generate_maze(dim, p, flag_cells=True):
     maze = np.random.choice([CELL_BLOCKED, CELL_OPEN], (dim,dim), p=[p,1-p])
-    maze[0][0] = CELL_PATH
-    maze[dim-1][dim-1] = CELL_PATH
+    if flag_cells:
+        maze[0][0] = CELL_PATH
+        maze[dim-1][dim-1] = CELL_PATH
     return maze
 
 def reset_maze(maze):
